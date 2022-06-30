@@ -1,0 +1,46 @@
+version: '3.9'
+services:
+  db:
+    container_name: coffee_db
+    image: mongo
+    restart: always
+    volumes:
+      - ~/apps/mongo:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  backend:
+    container_name: coffee_backend
+    restart: always
+    volumes:
+      - ./backend:/go/src/app:rw
+    build:
+      context: backend
+      dockerfile: ./Dockerfile
+    ports:
+      - 5000:5000
+    environment:
+      MONGODB_URI: mongodb://admin:admin@mongo:27017
+    depends_on:
+      - 'db'
+
+  frontend:
+    container_name: coffee_frontend
+    restart: always
+    volumes:
+      - ./frontend:/app:r
+      - /app/node_modules
+    ports:
+      - 3000:3000
+    build:
+      context: frontend
+      dockerfile: ./Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true
