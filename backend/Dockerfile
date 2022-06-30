@@ -1,9 +1,12 @@
-FROM golang:1.17-alpine
+FROM golang:1.17 as base
 
-WORKDIR /go/src/app
+WORKDIR /app
 COPY . .
 
 RUN go get -d -v
-RUN go build -v -o main
 
-CMD ["./main"]
+FROM base as dev
+
+RUN curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+
+CMD ["air"]
